@@ -1,8 +1,8 @@
 # ZeroTierOne for Magisk
 
-ZeroTierOne安卓客户端使用不太方便，无法使用自建planet和设置moon，并且需要新建vpn。编译的二进制目前Mi13Pro测试使用正常。
+ZeroTierOne安卓客户端使用不太方便，无法设置自建planet和moon，并且需要开启vpn。编译的二进制目前Mi13Pro测试使用正常。
 
-思路参考: https://v2ex.com/t/863131
+思路参考链接: https://v2ex.com/t/863131
 
 # 免责声明
 本项目不对以下情况负责：设备变砖、SD 卡损坏或 SoC 烧毁。
@@ -40,7 +40,7 @@ mv /data/zerotier-one/planet /data/zerotier-one/planet.back
 cp /path/planet /data/zerotier-one/planet
 ```
 
-卸载
+# 卸载
 
 - 从 Magisk Manager应用卸载本模块，会删除 `/data/adb/service.d/zerotierone_service.sh` 文件，保留数据目录 `/data/zerotier-one`
 
