@@ -1,0 +1,69 @@
+#!/system/bin/sh
+path="/data/zerotier-one"
+bin_name="zerotier-one"
+pid_file=$path/pid
+bin_status() {
+	if bin_pid=$(busybox pidof ${bin_name}) ; then
+		return 0
+	else
+		return 1
+	fi
+}
+display_bin_status() {
+	if bin_status ; then
+		echo "zerotier-one is running"
+		return 0
+	else
+		echo "zerotier-one is stopped"
+		return 1
+	fi
+}
+start_bin() {
+	nohup $bin_name > /dev/null 2> $path/error.log &
+	echo -n $! > $path/pid
+}
+start_service() {
+	if bin_status ; then
+		echo "${bin_name} has been running"
+		return
+	fi
+	start_bin
+	ip rule add from all lookup main pref 1
+	if [[ bin_status ]]; then
+		echo "start success"
+	else 
+		echo "start fail,more information see error log"
+	fi
+	
+}
+stop_service() {
+	if bin_status ; then
+		echo "stopping ${bin_name} service."
+		kill $(cat ${pid_file}) || killall ${bin_name}
+		forward -D >> /dev/null 2>&1
+		sleep 1
+		ip rule del from all lookup main pref 1
+		echo "${bin_name} stopped"
+	else
+		echo "${bin_name} has been stopped"
+	fi
+	rm -f ${pid_file} >> /dev/null 2>&1
+}
+case "$1" in
+  start)
+    start_service
+    ;;
+  stop)
+    stop_service
+    ;;
+  restart)
+    stop_service
+    start_service
+    ;;
+  status)
+    display_bin_status
+    ;;
+  *)
+    echo "$0 $1 usage: $0 {start|stop|restart|status}"
+    ;;
+esac
