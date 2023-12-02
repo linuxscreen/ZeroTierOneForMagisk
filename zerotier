@@ -3,7 +3,7 @@ path="/data/zerotier-one"
 bin_name="zerotier-one"
 pid_file=$path/pid
 bin_status() {
-	if bin_pid=$(busybox pidof ${bin_name}) ; then
+	if [[ $(busybox pidof ${bin_name}) ]]; then
 		return 0
 	else
 		return 1
@@ -11,11 +11,9 @@ bin_status() {
 }
 display_bin_status() {
 	if bin_status ; then
-		echo "zerotier-one is running"
-		return 0
+		echo -e "\033[32m● zerotier-one is running \033[0m"
 	else
-		echo "zerotier-one is stopped"
-		return 1
+		echo -e "\033[31m● zerotier-one is stopped \033[0m"
 	fi
 }
 start_bin() {
@@ -29,10 +27,10 @@ start_service() {
 	fi
 	start_bin
 	ip rule add from all lookup main pref 1
-	if [[ bin_status ]]; then
+	if bin_status; then
 		echo "start success"
 	else 
-		echo "start fail,more information see error log"
+		echo "start fail,more information see /data/zerotier-one/error.log"
 	fi
 	
 }
@@ -40,10 +38,12 @@ stop_service() {
 	if bin_status ; then
 		echo "stopping ${bin_name} service."
 		kill $(cat ${pid_file}) || killall ${bin_name}
+		while bin_status; do
+			sleep 0.5
+		done
 		forward -D >> /dev/null 2>&1
-		sleep 1
+		# sleep 2
 		ip rule del from all lookup main pref 1
-		echo "${bin_name} stopped"
 	else
 		echo "${bin_name} has been stopped"
 	fi
@@ -52,9 +52,11 @@ stop_service() {
 case "$1" in
   start)
     start_service
+    display_bin_status
     ;;
   stop)
     stop_service
+    display_bin_status
     ;;
   restart)
     stop_service
