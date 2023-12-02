@@ -1,6 +1,6 @@
 id=ZeroTierOneForMagisk
 name=ZeroTierOne For Magisk
-version=v1.0
+version=v1.1
 versionCode=20231202
 author=linuxscreen
 description=use zerotier-one on android device,support planet and moon
