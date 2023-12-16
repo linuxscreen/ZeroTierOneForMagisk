@@ -2,8 +2,10 @@
 path="/data/zerotier-one"
 bin_name="zerotier-one"
 pid_file=$path/pid
+busybox="/data/adb/magisk/busybox"
+[ -f "/data/adb/ksu/bin/busybox" ] && busybox="/data/adb/ksu/bin/busybox"
 bin_status() {
-	if [[ $(busybox pidof ${bin_name}) ]]; then
+	if [[ $($busybox pidof ${bin_name}) ]]; then
 		return 0
 	else
 		return 1
@@ -61,6 +63,7 @@ case "$1" in
   restart)
     stop_service
     start_service
+    display_bin_status
     ;;
   status)
     display_bin_status
