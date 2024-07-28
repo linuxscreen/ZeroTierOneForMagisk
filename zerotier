@@ -31,10 +31,10 @@ start_service() {
 	ip rule add from all lookup main pref 1
 	if bin_status; then
 		echo "start success"
-	else 
+	else
 		echo "start fail,more information see /data/zerotier-one/error.log"
 	fi
-	
+
 }
 stop_service() {
 	if bin_status ; then

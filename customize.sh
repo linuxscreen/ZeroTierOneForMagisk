@@ -50,7 +50,7 @@ cp -f $MODPATH/zerotier-one $MODPATH$PATH
 cp -f $MODPATH/zerotier-one $MODPATH$PATH/zerotier-idtool
 cp -f $MODPATH/zerotier-one $MODPATH$PATH/zerotier-cli
 rm $MODPATH/zerotier-one
-  
+
 ui_print "- Setting permissions"
 set_perm_recursive $MODPATH 0 0 0755 0644
 set_perm ${service_dir}/zerotierone_service.sh  0  0  0755
