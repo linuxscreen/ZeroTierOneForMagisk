@@ -46,7 +46,7 @@ jobs:
           make clean
           make --silent -j $(nproc) ZT_SSO_SUPPORTED=0 ZT_STATIC=1 ZT_DEBUG=0 CC=$CC CXX=$CXX LDFLAGS="-s"
           cd ..
-          cp ZeroTierOne/zerotier-one ZeroTierOneForMagisk/zerotier
+          cp ZeroTierOne/zerotier-one ZeroTierOneForMagisk/zerotier-one
           cd ZeroTierOneForMagisk
           rm -rf .github
           rm -rf .vscode
