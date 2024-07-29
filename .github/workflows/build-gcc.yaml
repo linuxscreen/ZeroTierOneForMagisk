@@ -64,7 +64,7 @@ jobs:
         uses: mathieudutour/github-tag-action@v5.6
         with:
             github_token: ${{ secrets.GITHUB_TOKEN }}
-            custom_tag: v${{ vars.ZEROTIER_BRANCH }}
+            custom_tag: ${{ vars.ZEROTIER_BRANCH }}
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
