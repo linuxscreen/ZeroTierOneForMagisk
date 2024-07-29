@@ -52,6 +52,7 @@ jobs:
           rm -rf .vscode
           rm -rf build
           rm .gitignore
+          rm -rf .git
       - name: Archive project
         run: zip -r ZeroTierOneForMagisk.zip ZeroTierOneForMagisk  # 创建项目的压缩包
 
