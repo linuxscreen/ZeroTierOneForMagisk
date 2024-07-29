@@ -64,11 +64,11 @@ jobs:
         uses: mathieudutour/github-tag-action@v5.6
         with:
             github_token: ${{ secrets.GITHUB_TOKEN }}
-            custom_tag: ${{ vars.ZEROTIER_BRANCH }}
+            custom_tag: v${{ vars.ZEROTIER_BRANCH }}
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-            tag_name: ${{ vars.ZEROTIER_BRANCH }}
+            tag_name: v${{ vars.ZEROTIER_BRANCH }}
             files: ZeroTierOneForMagisk.zip
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
