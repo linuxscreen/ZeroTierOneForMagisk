@@ -1,0 +1,74 @@
+name: build with GCC toolchains
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-gcc:
+    permissions: write-all
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ZerotierForMagisk
+        uses: actions/checkout@v4
+        with:
+            path: ZeroTierOneForMagisk
+
+      - name: Checkout ZeroTierOne
+        uses: actions/checkout@v4
+        with:
+          repository: zerotier/ZeroTierOne
+          ref: ${{ vars.ZEROTIER_BRANCH }}
+          path: ZeroTierOne
+
+      - id: commit
+        uses: prompt/actions-commit-hash@v3
+
+      - name: Prepare GCC Toolchain
+        run: |
+          sudo apt update
+          sudo apt-get install -qqy gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf g++-aarch64-linux-gnu g++-arm-linux-gnueabihf
+          rustup target add aarch64-unknown-linux-gnu
+          sudo dpkg --add-architecture arm64
+          sudo mv ZeroTierOneForMagisk/build/sources.list /etc/apt/sources.list
+          sudo apt-get update -qqy
+          sudo apt-get install -qqy libssl-dev:arm64
+      - name: Patch ZeroTier for Cross-Compile
+        run: |
+          pip3 install toml
+          python3 ZeroTierOneForMagisk/build/patch.py
+      - name: Build for AArch64
+        run: |
+          CC=aarch64-linux-gnu-gcc
+          CXX=aarch64-linux-gnu-g++
+          cd ZeroTierOne
+          mv make-linux.mk.aarch64 make-linux.mk
+          make clean
+          make --silent -j $(nproc) ZT_SSO_SUPPORTED=0 ZT_STATIC=1 ZT_DEBUG=0 CC=$CC CXX=$CXX LDFLAGS="-s"
+          cd ..
+          cp ZeroTierOne/zerotier-one ZeroTierOneForMagisk/zerotier
+          cd ZeroTierOneForMagisk
+          rm -rf .github
+          rm -rf .vscode
+          rm -rf build
+          rm .gitignore
+      - name: Archive project
+        run: zip -r ZeroTierOneForMagisk.zip ZeroTierOneForMagisk  # 创建项目的压缩包
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+              name: project-archive
+              path: ZeroTierOneForMagisk.zip
+      - name: Create Tag
+        uses: mathieudutour/github-tag-action@v5.6
+        with:
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+            custom_tag: ${{ vars.ZEROTIER_BRANCH }}
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+            tag_name: ${{ vars.ZEROTIER_BRANCH }}
+            files: ZeroTierOneForMagisk.zip
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
