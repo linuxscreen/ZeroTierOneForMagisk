@@ -53,8 +53,9 @@ jobs:
           rm -rf build
           rm .gitignore
           rm -rf .git
+          rm README.md README_zh.md
       - name: Archive project
-        run: zip -r ZeroTierOneForMagisk.zip ZeroTierOneForMagisk  # 创建项目的压缩包
+        run: cd ZeroTierOneForMagisk && zip -r ../ZeroTierOneForMagisk.zip *  # 创建项目的压缩包
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
