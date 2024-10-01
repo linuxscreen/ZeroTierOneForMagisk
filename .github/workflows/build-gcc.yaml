@@ -54,8 +54,15 @@ jobs:
           rm .gitignore
           rm -rf .git
           rm README.md README_zh.md
+
+      - name: Update version and versionCode
+        run: |
+          current_date=$(date +'%Y%m%d')
+          sed -i "s/^version=.*/version=v${{ vars.ZEROTIER_BRANCH }}/" ZeroTierOneForMagisk/module.prop
+          sed -i "s/^versionCode=.*/versionCode=$current_date/" ZeroTierOneForMagisk/module.prop
+          
       - name: Archive project
-        run: cd ZeroTierOneForMagisk && zip -r ../ZeroTierOneForMagisk.zip *  # 创建项目的压缩包
+        run: cd ZeroTierOneForMagisk && zip -r ../ZeroTierOneForMagisk.zip *
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
