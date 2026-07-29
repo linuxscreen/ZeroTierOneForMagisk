@@ -157,8 +157,10 @@
   }
 
   function setServiceButtonsDisabled(disabled) {
+    const running = Boolean(state.overview?.running);
     $$('[data-service-action]').forEach((button) => {
-      button.disabled = disabled;
+      const requiresRunning = button.dataset.serviceAction === "stop" || button.dataset.serviceAction === "restart";
+      button.disabled = disabled || (requiresRunning && !running);
     });
   }
 
@@ -187,6 +189,7 @@
     autostart.checked = Boolean(data.autostart);
     autostart.disabled = state.busy;
     $("#pending-banner").classList.toggle("is-hidden", !data.planetPending);
+    setServiceButtonsDisabled(state.busy);
   }
 
   function formatVersion(item) {
@@ -207,6 +210,7 @@
       $(".status-text", status).textContent = "连接失败";
       $("#service-state").textContent = "连接失败";
       $("#service-description").textContent = "当前 WebView 无法执行模块 root 命令，请检查打开方式。";
+      setServiceButtonsDisabled(state.busy);
     }
   }
 
@@ -382,6 +386,14 @@
     try {
       const response = await api("service", action);
       toast(response.message || "服务操作完成");
+      if (typeof response.data?.running === "boolean") {
+        renderOverview({
+          running: response.data.running,
+          autostart: state.overview?.autostart ?? true,
+          planetPending: state.overview?.planetPending ?? false,
+          info: response.data.running ? state.overview?.info ?? null : null,
+        });
+      }
       await refreshOverview({ quiet: true });
       if (state.page === "planet") await refreshPlanet({ quiet: true });
       if (action === "stop") {

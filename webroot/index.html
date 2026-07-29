@@ -33,7 +33,7 @@
           <strong>Planet 等待生效</strong>
           <span>重启 ZeroTier 服务以载入新文件</span>
         </div>
-        <button type="button" data-service-action="restart">立即重启</button>
+        <button type="button" data-service-action="restart" disabled>立即重启</button>
       </div>
 
       <main>
@@ -82,11 +82,11 @@
                 <span class="command-icon">▶</span>
                 <span><strong>启动</strong><small>START SERVICE</small></span>
               </button>
-              <button class="command-button" type="button" data-service-action="restart">
+              <button class="command-button" type="button" data-service-action="restart" disabled>
                 <span class="command-icon">↻</span>
                 <span><strong>重启</strong><small>RELOAD NODE</small></span>
               </button>
-              <button class="command-button command-danger" type="button" data-service-action="stop">
+              <button class="command-button command-danger" type="button" data-service-action="stop" disabled>
                 <span class="command-icon">■</span>
                 <span><strong>停止</strong><small>STOP SERVICE</small></span>
               </button>

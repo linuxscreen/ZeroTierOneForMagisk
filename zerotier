@@ -33,6 +33,23 @@ bin_status() {
 	run_busybox pidof "$bin_name" >/dev/null 2>&1
 }
 
+process_is_target() {
+	pid="$1"
+	case "$pid" in
+		''|*[!0-9]*) return 1 ;;
+	esac
+	kill -0 "$pid" >/dev/null 2>&1 || return 1
+	process_name="$(run_busybox cat "/proc/$pid/comm" 2>/dev/null)"
+	[ "$process_name" = "$bin_name" ]
+}
+
+read_service_pid() {
+	[ -r "$pid_file" ] || return 1
+	service_pid="$(cat "$pid_file" 2>/dev/null)"
+	process_is_target "$service_pid" || return 1
+	printf '%s' "$service_pid"
+}
+
 display_bin_status() {
 	if bin_status; then
 		printf '\033[32m● zerotier-one is running\033[0m\n'
@@ -89,26 +106,27 @@ start_service() {
 stop_service() {
 	if bin_status; then
 		echo "stopping ${bin_name} service."
-		pids="$(run_busybox pidof "$bin_name" 2>/dev/null)"
-		for pid in $pids; do
-			case "$pid" in
-				*[!0-9]*) ;;
-				*) kill "$pid" >/dev/null 2>&1 ;;
-			esac
-		done
+		service_pid="$(read_service_pid)" || {
+			echo "missing, stale, or invalid pid file: $pid_file"
+			rm -f "$pid_file"
+			return 1
+		}
+		kill "$service_pid" >/dev/null 2>&1 || {
+			echo "failed to signal ${bin_name} pid $service_pid"
+			return 1
+		}
 
 		wait_count=0
-		while bin_status && [ "$wait_count" -lt 20 ]; do
+		while process_is_target "$service_pid" && [ "$wait_count" -lt 20 ]; do
 			sleep 0.25
 			wait_count=$((wait_count + 1))
 		done
-		if bin_status; then
-			run_busybox killall -9 "$bin_name" >/dev/null 2>&1
+		if process_is_target "$service_pid"; then
+			kill -9 "$service_pid" >/dev/null 2>&1
 			sleep 0.25
 		fi
-		if bin_status; then
+		if process_is_target "$service_pid" || bin_status; then
 			echo "failed to stop ${bin_name}"
-			rm -f "$pid_file"
 			return 1
 		fi
 		remove_route_rule

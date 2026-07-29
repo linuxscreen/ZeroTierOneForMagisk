@@ -226,6 +226,11 @@ button {
   font-weight: 800;
 }
 
+.pending-banner button:disabled {
+  opacity: 0.38;
+  pointer-events: none;
+}
+
 .page {
   display: none;
 }
