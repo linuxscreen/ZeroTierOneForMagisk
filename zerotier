@@ -1,69 +1,165 @@
 #!/system/bin/sh
+
+umask 077
 path="/data/zerotier-one"
 bin_name="zerotier-one"
-pid_file=$path/pid
-busybox="/data/adb/magisk/busybox"
-[ -f "/data/adb/ksu/bin/busybox" ] && busybox="/data/adb/ksu/bin/busybox"
-bin_status() {
-	if [[ $($busybox pidof ${bin_name}) ]]; then
-		return 0
+script_dir="${0%/*}"
+[ "$script_dir" = "$0" ] && script_dir="."
+bin_path="$script_dir/$bin_name"
+[ -x "$bin_path" ] || bin_path="$(command -v "$bin_name" 2>/dev/null)"
+pid_file="$path/pid"
+planet_pending="$path/.planet-restart-required"
+busybox=""
+
+for candidate in \
+	/data/adb/magisk/busybox \
+	/data/adb/ksu/bin/busybox \
+	/data/adb/ap/bin/busybox; do
+	if [ -x "$candidate" ]; then
+		busybox="$candidate"
+		break
+	fi
+done
+
+run_busybox() {
+	if [ -n "$busybox" ]; then
+		"$busybox" "$@"
 	else
+		"$@"
+	fi
+}
+
+bin_status() {
+	run_busybox pidof "$bin_name" >/dev/null 2>&1
+}
+
+process_is_target() {
+	pid="$1"
+	case "$pid" in
+		''|*[!0-9]*) return 1 ;;
+	esac
+	kill -0 "$pid" >/dev/null 2>&1 || return 1
+	process_name="$(run_busybox cat "/proc/$pid/comm" 2>/dev/null)"
+	[ "$process_name" = "$bin_name" ]
+}
+
+read_service_pid() {
+	[ -r "$pid_file" ] || return 1
+	service_pid="$(cat "$pid_file" 2>/dev/null)"
+	process_is_target "$service_pid" || return 1
+	printf '%s' "$service_pid"
+}
+
+display_bin_status() {
+	if bin_status; then
+		printf '\033[32m● zerotier-one is running\033[0m\n'
+	else
+		printf '\033[31m● zerotier-one is stopped\033[0m\n'
+	fi
+}
+
+ensure_route_rule() {
+	if ! ip rule show 2>/dev/null | run_busybox grep -q '^1:.*lookup main'; then
+		ip rule add from all lookup main pref 1 >/dev/null 2>&1
+	fi
+}
+
+remove_route_rule() {
+	ip rule del from all lookup main pref 1 >/dev/null 2>&1
+}
+
+start_bin() {
+	[ -n "$bin_path" ] && [ -x "$bin_path" ] || return 1
+	mkdir -p "$path" || return 1
+	nohup "$bin_path" >/dev/null 2>"$path/error.log" &
+	new_pid=$!
+	if ! printf '%s' "$new_pid" >"$pid_file"; then
+		kill "$new_pid" >/dev/null 2>&1
 		return 1
 	fi
 }
-display_bin_status() {
-	if bin_status ; then
-		echo -e "\033[32m● zerotier-one is running \033[0m"
-	else
-		echo -e "\033[31m● zerotier-one is stopped \033[0m"
-	fi
-}
-start_bin() {
-	nohup $bin_name > /dev/null 2> $path/error.log &
-	echo -n $! > $path/pid
-}
+
 start_service() {
-	if bin_status ; then
-		echo "${bin_name} has been running"
-		return
-	fi
-	start_bin
-	ip rule add from all lookup main pref 1
 	if bin_status; then
-		echo "start success"
-	else
-		echo "start fail,more information see /data/zerotier-one/error.log"
+		ensure_route_rule
+		echo "${bin_name} has been running"
+		return 0
 	fi
 
+	start_bin || {
+		echo "unable to find or start ${bin_name}"
+		return 1
+	}
+	sleep 1
+	if bin_status; then
+		ensure_route_rule
+		rm -f "$planet_pending"
+		echo "start success"
+		return 0
+	fi
+
+	rm -f "$pid_file"
+	echo "start fail, more information see $path/error.log"
+	return 1
 }
+
 stop_service() {
-	if bin_status ; then
+	if bin_status; then
 		echo "stopping ${bin_name} service."
-		kill $(cat ${pid_file}) || killall ${bin_name}
-		while bin_status; do
-			sleep 0.5
+		service_pid="$(read_service_pid)" || {
+			echo "missing, stale, or invalid pid file: $pid_file"
+			rm -f "$pid_file"
+			return 1
+		}
+		kill "$service_pid" >/dev/null 2>&1 || {
+			echo "failed to signal ${bin_name} pid $service_pid"
+			return 1
+		}
+
+		wait_count=0
+		while process_is_target "$service_pid" && [ "$wait_count" -lt 20 ]; do
+			sleep 0.25
+			wait_count=$((wait_count + 1))
 		done
-		forward -D >> /dev/null 2>&1
-		# sleep 2
-		ip rule del from all lookup main pref 1
+		if process_is_target "$service_pid"; then
+			kill -9 "$service_pid" >/dev/null 2>&1
+			sleep 0.25
+		fi
+		if process_is_target "$service_pid" || bin_status; then
+			echo "failed to stop ${bin_name}"
+			return 1
+		fi
+		remove_route_rule
 	else
 		echo "${bin_name} has been stopped"
+		remove_route_rule
 	fi
-	rm -f ${pid_file} >> /dev/null 2>&1
+	rm -f "$pid_file"
 }
 case "$1" in
   start)
     start_service
+    result=$?
     display_bin_status
+    exit "$result"
     ;;
   stop)
     stop_service
+    result=$?
     display_bin_status
+    exit "$result"
     ;;
   restart)
     stop_service
-    start_service
+    stop_result=$?
+    if [ "$stop_result" -eq 0 ]; then
+      start_service
+      result=$?
+    else
+      result=$stop_result
+    fi
     display_bin_status
+    exit "$result"
     ;;
   status)
     display_bin_status

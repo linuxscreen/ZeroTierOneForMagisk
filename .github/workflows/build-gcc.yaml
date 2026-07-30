@@ -7,7 +7,10 @@ jobs:
   build-gcc:
     permissions: write-all
     environment: production
-    runs-on: ubuntu-latest
+    # build/sources.list is pinned to Ubuntu 22.04 (jammy). Using
+    # ubuntu-latest (currently noble) leaves the deb822 noble sources active
+    # and makes APT request unsupported arm64 indexes from security.ubuntu.com.
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout ZerotierForMagisk
         uses: actions/checkout@v4

@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f5f0e8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+    <title>ZeroTier Console</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="ambient-grid" aria-hidden="true"></div>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-lockup">
+          <div class="brand-mark" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div>
+            <p class="eyebrow">MAGISK NETWORK MODULE</p>
+            <h1>ZEROTIER<span>/</span>ONE</h1>
+          </div>
+        </div>
+        <button class="status-chip is-unknown" id="header-status" type="button" data-action="refresh-overview">
+          <span class="status-dot"></span>
+          <span class="status-text">检测中</span>
+        </button>
+      </header>
+
+      <div class="pending-banner is-hidden" id="pending-banner" role="status">
+        <div class="pending-icon">!</div>
+        <div>
+          <strong>Planet 等待生效</strong>
+          <span>重启 ZeroTier 服务以载入新文件</span>
+        </div>
+        <button type="button" data-service-action="restart" disabled>立即重启</button>
+      </div>
+
+      <main>
+        <section class="page is-active" data-page="control" aria-labelledby="nav-control">
+          <div class="hero-panel reveal" id="hero-panel">
+            <div class="hero-copy">
+              <p class="section-kicker">NODE CONTROL / 节点控制</p>
+              <div class="hero-state-row">
+                <div>
+                  <span class="hero-state-label">SERVICE STATE</span>
+                  <h2 id="service-state">正在读取</h2>
+                </div>
+                <div class="radar" id="status-radar" aria-hidden="true">
+                  <i></i><i></i><i></i><b></b>
+                </div>
+              </div>
+              <p class="hero-description" id="service-description">正在通过 root 命令桥连接 ZeroTier 服务。</p>
+            </div>
+
+            <div class="metric-grid">
+              <article class="metric-card">
+                <span>NODE ID</span>
+                <strong id="node-id">---------- </strong>
+              </article>
+              <article class="metric-card">
+                <span>ZEROTIER</span>
+                <strong id="node-version">--</strong>
+              </article>
+              <article class="metric-card metric-wide">
+                <span>NETWORK STATE</span>
+                <strong id="node-online">UNKNOWN</strong>
+              </article>
+            </div>
+          </div>
+
+          <section class="console-section reveal delay-1">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">SERVICE COMMANDS</p>
+                <h3>服务操作</h3>
+              </div>
+              <span class="command-hint">ROOT / SYSTEM</span>
+            </div>
+            <div class="command-grid">
+              <button class="command-button command-primary" type="button" data-service-action="start">
+                <span class="command-icon">▶</span>
+                <span><strong>启动</strong><small>START SERVICE</small></span>
+              </button>
+              <button class="command-button" type="button" data-service-action="restart" disabled>
+                <span class="command-icon">↻</span>
+                <span><strong>重启</strong><small>RELOAD NODE</small></span>
+              </button>
+              <button class="command-button command-danger" type="button" data-service-action="stop" disabled>
+                <span class="command-icon">■</span>
+                <span><strong>停止</strong><small>STOP SERVICE</small></span>
+              </button>
+            </div>
+          </section>
+
+          <section class="setting-panel reveal delay-2">
+            <div class="setting-copy">
+              <div class="setting-icon">A</div>
+              <div>
+                <strong>开机自动启动</strong>
+                <span>单独控制下次开机行为，不改变当前状态</span>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="autostart-toggle" disabled />
+              <span></span>
+              <em class="sr-only">开机自动启动</em>
+            </label>
+          </section>
+        </section>
+
+        <section class="page" data-page="peers" aria-labelledby="nav-peers">
+          <div class="page-heading reveal">
+            <div>
+              <p class="section-kicker">LINK TOPOLOGY</p>
+              <h2>Peers</h2>
+              <p>节点正在使用的物理链路与根服务器。</p>
+            </div>
+            <button class="icon-button" type="button" data-action="refresh-peers" aria-label="刷新 Peers">↻</button>
+          </div>
+          <div class="summary-strip reveal delay-1">
+            <span><b id="peer-count">--</b> TOTAL PEERS</span>
+            <span><b id="direct-count">--</b> DIRECT LINKS</span>
+            <span id="peers-updated">尚未刷新</span>
+          </div>
+          <div class="card-list reveal delay-2" id="peers-list"></div>
+        </section>
+
+        <section class="page" data-page="networks" aria-labelledby="nav-networks">
+          <div class="page-heading reveal">
+            <div>
+              <p class="section-kicker">VIRTUAL NETWORKS</p>
+              <h2>网络</h2>
+              <p>查看、加入或退出 ZeroTier 虚拟网络。</p>
+            </div>
+            <button class="icon-button" type="button" data-action="refresh-networks" aria-label="刷新网络">↻</button>
+          </div>
+
+          <form class="join-panel reveal delay-1" id="join-form">
+            <label for="network-id">NETWORK ID</label>
+            <div class="input-action-row">
+              <input id="network-id" name="network-id" type="text" maxlength="16" inputmode="text" autocomplete="off" spellcheck="false" placeholder="16 位十六进制 ID" />
+              <button class="solid-button" type="submit">加入</button>
+            </div>
+            <small>例如：8056c2e21c000001</small>
+          </form>
+
+          <div class="list-header reveal delay-2">
+            <span>已加入网络</span>
+            <b id="network-count">--</b>
+          </div>
+          <div class="card-list reveal delay-2" id="networks-list"></div>
+        </section>
+
+        <section class="page" data-page="planet" aria-labelledby="nav-planet">
+          <div class="page-heading reveal">
+            <div>
+              <p class="section-kicker">ROOT AUTHORITY</p>
+              <h2>Planet</h2>
+              <p>替换根服务器定义，或将当前文件备份到指定目录。</p>
+            </div>
+            <button class="icon-button" type="button" data-action="refresh-planet" aria-label="刷新 Planet">↻</button>
+          </div>
+
+          <div class="planet-file-grid reveal delay-1">
+            <article class="file-card">
+              <span class="file-type">ACTIVE</span>
+              <h3>当前 Planet</h3>
+              <strong id="planet-current-size">未检测</strong>
+              <code id="planet-current-hash">SHA256 —</code>
+              <time id="planet-current-time">—</time>
+            </article>
+            <article class="file-card file-card-muted">
+              <span class="file-type">ROLLBACK</span>
+              <h3>最近备份</h3>
+              <strong id="planet-backup-size">未检测</strong>
+              <code id="planet-backup-hash">SHA256 —</code>
+              <time id="planet-backup-time">—</time>
+            </article>
+          </div>
+
+          <section class="console-section reveal delay-2">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">REPLACE PLANET</p>
+                <h3>替换文件</h3>
+              </div>
+              <span class="command-hint">MAX 1 MiB</span>
+            </div>
+            <p class="section-note">替换前自动保留最近一份内部备份。文件不会自动生效，完成后请手动重启服务。</p>
+            <input class="visually-hidden-file" id="planet-file" type="file" />
+            <label class="file-picker" for="planet-file">
+              <span class="file-picker-icon">＋</span>
+              <span><strong id="planet-file-label">选择 Planet 文件</strong><small>点击从设备读取二进制文件</small></span>
+            </label>
+            <div class="upload-progress is-hidden" id="upload-progress">
+              <div><span id="upload-stage">正在上传</span><b id="upload-percent">0%</b></div>
+              <i><span id="upload-bar"></span></i>
+            </div>
+            <div class="split-actions">
+              <button class="solid-button grow" id="replace-planet" type="button" disabled>上传并替换</button>
+              <button class="outline-button" id="restore-planet" type="button" disabled>恢复最近备份</button>
+            </div>
+          </section>
+
+          <section class="backup-panel reveal delay-3">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">MANUAL BACKUP</p>
+                <h3>手动备份</h3>
+              </div>
+            </div>
+            <p class="section-note">将当前 Planet 复制到共享存储或 <code>/data/local/tmp</code>，文件名自动附加时间。</p>
+            <label class="field-label" for="backup-preset">常用位置</label>
+            <select id="backup-preset">
+              <option value="/sdcard/Download/ZeroTier">下载 / ZeroTier</option>
+              <option value="/sdcard/ZeroTier">内部存储 / ZeroTier</option>
+              <option value="/sdcard/Download">下载目录</option>
+              <option value="/data/local/tmp">系统临时目录</option>
+              <option value="custom">自定义目录…</option>
+            </select>
+            <div class="custom-path-field" id="backup-path-field">
+              <label class="field-label" for="backup-path">备份目录</label>
+              <input id="backup-path" type="text" maxlength="512" value="/sdcard/Download/ZeroTier" data-custom-path="/sdcard/ZeroTier" autocomplete="off" spellcheck="false" readonly />
+            </div>
+            <button class="solid-button backup-action-button" id="backup-planet" type="button" disabled>立即备份</button>
+            <output class="backup-result is-hidden" id="backup-result"></output>
+          </section>
+        </section>
+      </main>
+
+      <nav class="bottom-nav" aria-label="主导航">
+        <button class="is-active" id="nav-control" type="button" data-nav="control"><span>⌁</span><b>控制</b></button>
+        <button id="nav-peers" type="button" data-nav="peers"><span>◌</span><b>Peers</b></button>
+        <button id="nav-networks" type="button" data-nav="networks"><span>◇</span><b>网络</b></button>
+        <button id="nav-planet" type="button" data-nav="planet"><span>◎</span><b>Planet</b></button>
+      </nav>
+    </div>
+
+    <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+
+    <dialog class="confirm-dialog" id="confirm-dialog">
+      <form method="dialog">
+        <span class="dialog-stripe"></span>
+        <p class="section-kicker">CONFIRM COMMAND</p>
+        <h2 id="confirm-title">确认操作</h2>
+        <p id="confirm-message"></p>
+        <div class="dialog-actions">
+          <button class="outline-button" value="cancel">取消</button>
+          <button class="solid-button" id="confirm-button" value="confirm">确认</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>

@@ -3,4 +3,4 @@ name=ZeroTierOne For Magisk
 version=v1.14.0
 versionCode=20240730
 author=linuxscreen
-description=use zerotier-one on android device,support planet and moon
+description=ZeroTier One for Android with service control, network status and Planet WebUI

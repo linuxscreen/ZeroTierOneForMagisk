@@ -42,21 +42,21 @@ if [ ! -d "/data/zerotier-one" ]; then
   set_perm /data/zerotier-one 0 0 0755
 fi
 
-mv -f $MODPATH/zerotierone_service.sh $service_dir/
+mv -f "$MODPATH/zerotierone_service.sh" "$service_dir/"
 ui_print "- Patching executable file"
-mkdir -p $MODPATH$PATH
-mv -f $MODPATH/zerotier $MODPATH$PATH
-cp -f $MODPATH/zerotier-one $MODPATH$PATH
-cp -f $MODPATH/zerotier-one $MODPATH$PATH/zerotier-idtool
-cp -f $MODPATH/zerotier-one $MODPATH$PATH/zerotier-cli
-rm $MODPATH/zerotier-one
+mkdir -p "$MODPATH$PATH"
+mv -f "$MODPATH/zerotier" "$MODPATH$PATH"
+cp -f "$MODPATH/zerotier-one" "$MODPATH$PATH"
+cp -f "$MODPATH/zerotier-one" "$MODPATH$PATH/zerotier-idtool"
+cp -f "$MODPATH/zerotier-one" "$MODPATH$PATH/zerotier-cli"
+rm "$MODPATH/zerotier-one"
 
 ui_print "- Setting permissions"
-set_perm_recursive $MODPATH 0 0 0755 0644
-set_perm ${service_dir}/zerotierone_service.sh  0  0  0755
-set_perm $MODPATH$PATH/zerotier  0  0  0755
-set_perm $MODPATH$PATH/zerotier-one  0  0  0755
-set_perm $MODPATH$PATH/zerotier-idtool  0  0  0755
-set_perm $MODPATH$PATH/zerotier-cli  0  0  0755
+set_perm_recursive "$MODPATH" 0 0 0755 0644
+set_perm "$service_dir/zerotierone_service.sh"  0  0  0755
+set_perm "$MODPATH$PATH/zerotier"  0  0  0755
+set_perm "$MODPATH$PATH/zerotier-one"  0  0  0755
+set_perm "$MODPATH$PATH/zerotier-idtool"  0  0  0755
+set_perm "$MODPATH$PATH/zerotier-cli"  0  0  0755
 
 ui_print "- Installation is complete, reboot your device"
